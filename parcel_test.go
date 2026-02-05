@@ -51,7 +51,7 @@ func TestAddGetDelete(t *testing.T) {
 
 	_, err = store.Get(id)
 	require.Error(t, err)
-	assert.Equal(t, sql.ErrNoRows, err)
+	require.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 func TestSetAddress(t *testing.T) {
@@ -83,13 +83,12 @@ func TestSetStatus(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, id)
 
-	newStatus := "sent"
-	err = store.SetStatus(id, newStatus)
+	err = store.SetStatus(id, ParcelStatusSent)
 	require.NoError(t, err)
 
 	storedParcel, err := store.Get(id)
 	require.NoError(t, err)
-	assert.Equal(t, newStatus, storedParcel.Status)
+	assert.Equal(t, ParcelStatusSent, storedParcel.Status)
 }
 
 func TestGetByClient(t *testing.T) {
@@ -119,12 +118,12 @@ func TestGetByClient(t *testing.T) {
 	}
 	storedParcels, err := store.GetByClient(client)
 	require.NoError(t, err)
-	require.Equal(t, len(parcels), len(storedParcels))
+	assert.Len(t, storedParcels, len(parcels))
 
 	for _, stored := range storedParcels {
 		original, found := parcelMap[stored.Number]
-		require.True(t, found)
-		assert.Equal(t, original.Client, stored.Client)
+		assert.True(t, found)
+		assert.Equal(t, original, stored)
 		assert.Equal(t, original.Status, stored.Status)
 		assert.Equal(t, original.Address, stored.Address)
 	}
@@ -140,7 +139,8 @@ func TestDeleteWithIncorrectStatus(t *testing.T) {
 	id, err := store.Add(parcel)
 	require.NoError(t, err)
 	require.NotEmpty(t, id)
-	err = store.SetStatus(id, "sent")
+
+	err = store.SetStatus(id, ParcelStatusSent)
 	require.NoError(t, err)
 	err = store.Delete(id)
 	require.Error(t, err)
