@@ -103,6 +103,7 @@ func main() {
 		fmt.Errorf("Ошибка подключения к бд %v", err)
 		return
 	}
+	defer db.Close()
 	store := NewParcelStore(db)
 	service := NewParcelService(store)
 
